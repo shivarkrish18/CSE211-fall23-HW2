@@ -52,12 +52,40 @@ def find_undefined_variables(input_python_file):
 
     # Convert the python file into a CFG
     CFG = get_graph(input_python_file)
+    statements = []
+    dic = dict()
+    UEVar = {}
+    VarKill = {}
+    VarDomain = {}
+    #Regular expression to check for input and assignment statements
+    input_or_assignment_re = r'([0-9]+):\s*([a-z]+)\s*=\s*(input\(\)|[a-z]+)\s*'
+    #Regular expression to check for while and if statements
+    while_or_if_re = r'([0-9]+):\s*(while|if):\s*([a-z]+)'
 
+    for i in CFG:
+        statement = get_node_instruction(i)
+        print
+        dic[i] = [set(),set(),set()]
+        if re.match(input_or_assignment_re, statement):
+            re_result = re.search(input_or_assignment_re,statement)
+            print(re_result.groups())
+            print()
+            dic[i][1].add(re_result.group(2))
+            if re_result.group(3) != 'input()':
+                dic[i][2].add(re_result.group(3))
+        elif re.match(while_or_if_re, statement):
+            re_result = re.search(while_or_if_re,statement)
+            print(re_result.groups())
+            print()
+            dic[i][2].add(re_result.group(3))
+
+    print(dic)
+            
     # Get LiveOut
-    LiveOut = compute_LiveOut(CFG, UEVar, VarKill, VarDomain)
+    #LiveOut = compute_LiveOut(CFG, UEVar, VarKill, VarDomain)
 
     # Return a set of unintialized variables
-    return get_uninitialized_variables_from_LiveOut(CFG, LiveOut)
+    #return get_uninitialized_variables_from_LiveOut(CFG, LiveOut)
 
 # if you run this file, you can give it one of the python test cases
 # in the test_cases/ directory.
@@ -66,4 +94,4 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()   
     parser.add_argument('pythonfile', help ='The python file to be analyzed') 
     args = parser.parse_args()
-    print(find_undefined_variables(args.pythonfile))
+    find_undefined_variables(args.pythonfile)
