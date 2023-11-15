@@ -11,7 +11,6 @@ def create_new_variables(statements, H):
         if len(H[key]) > 1:
             new_hash[key] = ['var' + str(var_counter),False]
             var_counter += 1
-    #print(new_hash)
 
     for statement in statements:
         final_statement = ''
@@ -32,12 +31,7 @@ def create_new_variables(statements, H):
 
 
     return replaced, return_statements
-                
-
-
-
-    
-        
+                  
 
 
 def remove_numbering(statements):
@@ -68,9 +62,6 @@ def remove_numbering(statements):
 
         removed_statements.append(new_statement)
 
-    #print('Done removing numbers')
-    #for i in removed_statements:
-    #    print(i)
     return removed_statements
 
 def local_value_numbering(f):
@@ -83,10 +74,7 @@ def local_value_numbering(f):
     to_optimize = s.split("// Start optimization range")[1].split("// End optimization range")[0]
     statements, H = hash_and_numbering(to_optimize)
     replaced, returned_statements = create_new_variables(statements, H)
-    #print(returned_statements)
     returned_statements = remove_numbering(returned_statements)
-    #for re in returned_statements:
-    #    print(re)
     print(pre)
     for returned_statement in returned_statements:
         print(returned_statement)
@@ -158,25 +146,6 @@ def hash_and_numbering(to_optimize):
         
     return statments, H
 
-    #statments = remove_numbering(statments)
-    #print('Statements ',statments)
-    #for ii in statments:
-    #    print(ii)
-    #print('Current Values ', Current_val)
-    
-    #print(pre)
-
-    # hint: print out any new variable declarations you need here
-
-    # hint: print out the optimized local block here
-
-    # hint: store any new numbered variables back to their unumbered counterparts here
-    
-    #print(post)
-
-    # You should keep track of how many instructions you replaced
-    #print("// replaced: " + str(replaced))    
-    
 
 # if you run this file, you can give it one of the python test cases
 # in the test_cases/ directory.
