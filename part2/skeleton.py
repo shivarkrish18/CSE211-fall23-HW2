@@ -29,9 +29,42 @@ def get_graph(input_file):
 
 # You can use get_node_successors(CFG, n) to get a list of n's
 # successor nodes.
-def compute_LiveOut(CFG, UEVar, VarKill, VarDomain):
+def compute_LiveOut(CFG, dic):
 
     LiveOut = {}
+    count = 1
+    for i in CFG:
+        LiveOut[i] = set()
+
+    changed = True
+    while changed:
+
+        changed = False
+        for i in CFG:
+            prev_set = LiveOut[i]
+            successors = get_node_successors(CFG,i)
+            
+            new_set = set()
+            for s in successors:
+                
+                new_set = new_set.union(LiveOut[s].intersection(dic[s][2]))
+                
+                new_set = new_set.union(dic[s][0])
+                
+                
+            LiveOut[i] = new_set
+
+            if new_set.difference(prev_set) != set():
+                changed = True
+        count = count + 1
+             
+        
+            
+            
+        
+
+
+    
 
     # hint: you will eventually implement a fixed point iteration. It
     # should look a lot like figure 8.14b in the EAC book.
@@ -52,11 +85,9 @@ def find_undefined_variables(input_python_file):
 
     # Convert the python file into a CFG
     CFG = get_graph(input_python_file)
-    statements = []
+
     dic = dict()
-    UEVar = {}
-    VarKill = {}
-    VarDomain = {}
+    VarDomain = set()
     #Regular expression to check for input and assignment statements
     input_or_assignment_re = r'([0-9]+):\s*([a-z]+)\s*=\s*(input\(\)|[a-z]+)\s*'
     #Regular expression to check for while and if statements
@@ -64,28 +95,48 @@ def find_undefined_variables(input_python_file):
 
     for i in CFG:
         statement = get_node_instruction(i)
-        print
-        dic[i] = [set(),set(),set()]
+
+        dic[i] = [set(),set(),set()] #3 sets corresponding to UEVAR, VarKill and ~VarKill
+
         if re.match(input_or_assignment_re, statement):
             re_result = re.search(input_or_assignment_re,statement)
-            print(re_result.groups())
-            print()
             dic[i][1].add(re_result.group(2))
+            VarDomain.add(re_result.group(2))
             if re_result.group(3) != 'input()':
-                dic[i][2].add(re_result.group(3))
-        elif re.match(while_or_if_re, statement):
-            re_result = re.search(while_or_if_re,statement)
-            print(re_result.groups())
-            print()
-            dic[i][2].add(re_result.group(3))
+                dic[i][0].add(re_result.group(3))
+                VarDomain.add(re_result.group(3))
 
-    print(dic)
+        elif re.match(while_or_if_re, statement):
+            re_result = re.search(while_or_if_re, statement)
+            dic[i][0].add(re_result.group(3))
+            VarDomain.add(re_result.group(3))
+    
+
+    #Computing complement of VarKill
+    for i in CFG:
+        
+        
+        
+        dic[i][2] = VarDomain.difference(dic[i][1])
+    
+    
+
+        
+    
+
+    
+
+    successors = get_node_successors(CFG,i)
+    
+
+    
             
     # Get LiveOut
-    #LiveOut = compute_LiveOut(CFG, UEVar, VarKill, VarDomain)
-
+    LiveOut = compute_LiveOut(CFG, dic)
+    
+    
     # Return a set of unintialized variables
-    #return get_uninitialized_variables_from_LiveOut(CFG, LiveOut)
+    return get_uninitialized_variables_from_LiveOut(CFG, LiveOut)
 
 # if you run this file, you can give it one of the python test cases
 # in the test_cases/ directory.
