@@ -8,6 +8,48 @@ import re
 # https://www.geeksforgeeks.org/draw-control-flow-graph-using-pycfg-python/
 # to get started with PyCFG. 
 
+
+def compute_LiveOut_RPO(CFG, dic):
+
+    LiveOut = {}
+    count = 1
+    for i in CFG:
+        LiveOut[i] = set()
+    rpo = compute_rpo(CFG)
+    print("RPO for the CFG is ")
+    print(rpo)
+    print()
+    changed = True
+    while changed:
+
+        changed = False
+        for i in rpo:
+            prev_set = LiveOut[i]
+            successors = get_node_successors(CFG,i)
+            
+            new_set = set()
+            for s in successors:
+                
+                new_set = new_set.union(LiveOut[s].intersection(dic[s][2]))
+                
+                new_set = new_set.union(dic[s][0])
+                
+                
+            LiveOut[i] = new_set
+
+            if new_set.difference(prev_set) != set():
+                changed = True
+        count = count + 1
+
+        
+
+
+    
+
+    # hint: you will eventually implement a fixed point iteration. It
+    # should look a lot like figure 8.14b in the EAC book.
+    print("No of iterations RPO ",count)
+    return LiveOut
 # Given a node, returns the instruction as a string
 # instructions are of the form:
 def get_node_instruction(n):
@@ -45,6 +87,8 @@ def compute_LiveOut(CFG, dic):
             successors = get_node_successors(CFG,i)
             
             new_set = set()
+
+
             for s in successors:
                 
                 new_set = new_set.union(LiveOut[s].intersection(dic[s][2]))
@@ -54,22 +98,36 @@ def compute_LiveOut(CFG, dic):
                 
             LiveOut[i] = new_set
 
+            #Checking if any entry is different from the previous one
             if new_set.difference(prev_set) != set():
                 changed = True
         count = count + 1
-             
-        
-            
-            
-        
-
-
     
 
     # hint: you will eventually implement a fixed point iteration. It
     # should look a lot like figure 8.14b in the EAC book.
-        
+    print("No of iterations ",count)
     return LiveOut
+
+
+#Utility functions for finding the post order traversal
+def dfs(node, visited, rpo_order,CFG):
+    visited[node] = True
+    for successor in get_node_successors(CFG,node):
+        if not visited[successor]:
+            dfs(successor, visited, rpo_order, CFG)
+    rpo_order.append(node)
+
+
+def compute_rpo(CFG):
+    visited = {node: False for node in CFG}
+    rpo_order = []
+
+    for node in CFG:
+        if not visited[node]:
+            dfs(node, visited, rpo_order, CFG)
+
+    return rpo_order
 
 # The uninitialized variables are the LiveOut variables from the start
 # node. It is fine if your implementation needs to change this
@@ -84,10 +142,14 @@ def get_uninitialized_variables_from_LiveOut(CFG, LiveOut):
 def find_undefined_variables(input_python_file):
 
     # Convert the python file into a CFG
-    CFG = get_graph(input_python_file)
-
+    CFG = get_graph(input_python_file)    
+    #Dictionary with node index as key and a list of 3 sets as values
+    #First set corresponds to UEVAR, second set to VarKill and third to ~VarKill
     dic = dict()
+
+    #Storing all the variables used in the script
     VarDomain = set()
+
     #Regular expression to check for input and assignment statements
     input_or_assignment_re = r'([0-9]+):\s*([a-z]+)\s*=\s*(input\(\)|[a-z]+)\s*'
     #Regular expression to check for while and if statements
@@ -98,10 +160,12 @@ def find_undefined_variables(input_python_file):
 
         dic[i] = [set(),set(),set()] #3 sets corresponding to UEVAR, VarKill and ~VarKill
 
+        #Adding LHS of assignment statement to VarKill and RHS to UEVAR
         if re.match(input_or_assignment_re, statement):
             re_result = re.search(input_or_assignment_re,statement)
             dic[i][1].add(re_result.group(2))
             VarDomain.add(re_result.group(2))
+
             if re_result.group(3) != 'input()':
                 dic[i][0].add(re_result.group(3))
                 VarDomain.add(re_result.group(3))
@@ -113,28 +177,18 @@ def find_undefined_variables(input_python_file):
     
 
     #Computing complement of VarKill
-    for i in CFG:
-        
-        
-        
+    for i in CFG:                
         dic[i][2] = VarDomain.difference(dic[i][1])
-    
-    
-
-        
-    
-
-    
-
-    successors = get_node_successors(CFG,i)
-    
-
     
             
     # Get LiveOut
     LiveOut = compute_LiveOut(CFG, dic)
     
-    
+    #RPO_LiveOut = compute_LiveOut_RPO(CFG, dic)
+
+    #print("RPO Liveout is ")
+    #print(RPO_LiveOut)
+    print()
     # Return a set of unintialized variables
     return get_uninitialized_variables_from_LiveOut(CFG, LiveOut)
 
