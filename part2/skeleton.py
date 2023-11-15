@@ -10,7 +10,6 @@ import re
 
 
 def compute_LiveOut_RPO(CFG, dic):
-
     LiveOut = {}
     count = 1
     for i in CFG:
@@ -40,8 +39,7 @@ def compute_LiveOut_RPO(CFG, dic):
             if new_set.difference(prev_set) != set():
                 changed = True
         count = count + 1
-
-        
+      
 
 
     
@@ -50,6 +48,48 @@ def compute_LiveOut_RPO(CFG, dic):
     # should look a lot like figure 8.14b in the EAC book.
     print("No of iterations RPO ",count)
     return LiveOut
+
+def compute_LiveOut_RPO_CFGReversed(CFG, dic):
+    reversed_cfg = reverse_and_compute_rpo(CFG)
+    print("reversed_cfg")
+    print(reversed_cfg)
+    LiveOut = {}
+    count = 1
+    for i in reversed_cfg:
+        LiveOut[i] = set()
+    #print("LiveOut for the CFG is ")
+    #print(LiveOut)
+    changed = True
+    while changed:
+        changed = False
+        
+        for i in reversed_cfg:
+            prev_set = LiveOut[i]
+            new_set = set()
+            for s in i:
+                print(dic[s][2])
+                print(dic[s])
+                new_set = new_set.union(LiveOut[s].intersection(dic[s][2]))
+                new_set = new_set.union(dic[s][0])
+                
+                
+            LiveOut[i] = new_set
+
+            if new_set.difference(prev_set) != set():
+                changed = True
+        count = count + 1
+      
+
+
+    
+
+    # hint: you will eventually implement a fixed point iteration. It
+    # should look a lot like figure 8.14b in the EAC book.
+    print("No of iterations RPO ",count)
+    return LiveOut
+
+
+
 # Given a node, returns the instruction as a string
 # instructions are of the form:
 def get_node_instruction(n):
@@ -127,7 +167,34 @@ def compute_rpo(CFG):
         if not visited[node]:
             dfs(node, visited, rpo_order, CFG)
 
-    return rpo_order
+    return rpo_order[::-1]
+
+
+
+
+def reverse_and_compute_rpo(CFG):
+    def dfs_CFGR(node, visited, rpo_order,CFG):
+        visited[node] = True
+        for successor in reverse_cfg[node]:
+            if not visited[successor]:
+                dfs_CFGR(successor, visited, rpo_order, CFG)
+        rpo_order.append(node)
+
+    reverse_cfg = {node: [] for node in CFG}
+
+    for node in CFG:
+        for successor in get_node_successors(CFG,node):
+            reverse_cfg.setdefault(successor,[]).append(node)
+
+    visited = {node: False for node in reverse_cfg}
+    rpo_order = []
+
+    for node in CFG:
+        if not visited[node]:
+            dfs_CFGR(node, visited, rpo_order, reverse_cfg)
+
+    reversed_cfg_dict = {node: reverse_cfg[node] for node in rpo_order[::-1]}
+    return reversed_cfg_dict       
 
 # The uninitialized variables are the LiveOut variables from the start
 # node. It is fine if your implementation needs to change this
@@ -183,14 +250,14 @@ def find_undefined_variables(input_python_file):
             
     # Get LiveOut
     LiveOut = compute_LiveOut(CFG, dic)
-    
-    #RPO_LiveOut = compute_LiveOut_RPO(CFG, dic)
+    #print(LiveOut)
+    RPO_LiveOut = compute_LiveOut_RPO_CFGReversed(CFG, dic)
 
-    #print("RPO Liveout is ")
-    #print(RPO_LiveOut)
-    print()
+    print("RPO Liveout is ")
+    print(RPO_LiveOut)
+    #print()
     # Return a set of unintialized variables
-    return get_uninitialized_variables_from_LiveOut(CFG, LiveOut)
+    return get_uninitialized_variables_from_LiveOut(CFG, RPO_LiveOut)
 
 # if you run this file, you can give it one of the python test cases
 # in the test_cases/ directory.
