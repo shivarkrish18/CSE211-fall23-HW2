@@ -11,13 +11,11 @@ import re
 
 def compute_LiveOut_RPO(CFG, dic):
     LiveOut = {}
-    count = 1
+    count = 0
     for i in CFG:
         LiveOut[i] = set()
+    # Same process as before but we are computing the RPO of the CFG for a different transversal
     rpo = compute_rpo(CFG)
-    print("RPO for the CFG is ")
-    print(rpo)
-    print()
     changed = True
     while changed:
 
@@ -28,7 +26,42 @@ def compute_LiveOut_RPO(CFG, dic):
             
             new_set = set()
             for s in successors:
+                # Following given algorithm with UEVAR and VarKill
+                new_set = new_set.union(LiveOut[s].intersection(dic[s][2]))
                 
+                new_set = new_set.union(dic[s][0])
+                
+                
+            LiveOut[i] = new_set
+            # Checking to see if there is change
+            if new_set.difference(prev_set) != set():
+                changed = True
+        count = count + 1
+      
+    print("No of iterations RPO ",count)
+    return LiveOut
+
+def compute_LiveOut_RPO_CFGReversed(CFG, dic):
+    # Reversing the CFG
+    reversed_CFG = CFG.reverse()
+    # Computing the rpo on the reverse cfg
+    rpo = compute_rpo(reversed_CFG,CFG.nodes()[-1])
+    LiveOut = {}
+    count = 0
+    for i in reversed_CFG:
+        LiveOut[i] = set()
+    changed = True
+    while changed:
+
+        changed = False
+        for i in rpo:
+            prev_set = LiveOut[i]
+            # Want to process the new transversal on the original CFG
+            successors = get_node_successors(CFG,i)
+            
+            new_set = set()
+            for s in successors:
+                # Following given algorithm with UEVAR and VarKill
                 new_set = new_set.union(LiveOut[s].intersection(dic[s][2]))
                 
                 new_set = new_set.union(dic[s][0])
@@ -40,68 +73,8 @@ def compute_LiveOut_RPO(CFG, dic):
                 changed = True
         count = count + 1
       
-
-
-    
-
-    # hint: you will eventually implement a fixed point iteration. It
-    # should look a lot like figure 8.14b in the EAC book.
     print("No of iterations RPO ",count)
     return LiveOut
-
-def compute_LiveOut_RPO_CFGReversed(CFG, dic):
-    for i in CFG:
-        print("Node is ",i," Instruction is ", get_node_instruction(i))
-
-    reversed_cfg = reverse_and_compute_rpo(CFG)
-    print("reversed_cfg")
-    print(reversed_cfg)
-    Out_In = {}
-    count = 1
-    for i in reversed_cfg:
-        Out_In[i] = [set(),set()]
-    #print("LiveOut for the CFG is ")
-    #print(LiveOut)
-    changed = True
-    while changed:
-        changed = False
-        
-        for i in reversed_cfg:
-            prev_set_out = Out_In[i][0]
-            prev_set_in = Out_In[i][1]
-            new_set_out = set()
-            new_set_in = set()
-
-            new_set_in = dic[i][0].union(Out_In[i][0].difference(dic[i][1]))
-            for s in reversed_cfg[i]:
-                #print(dic[s][2])
-                #print(dic[s])
-                new_set_out = new_set_out.union(Out_In[s][1])                
-                
-            Out_In[i][0] = new_set_out
-            Out_In[i][1] = new_set_in
-            print("New set out ",new_set_out)
-            print("New set in ",new_set_in)
-            print("Prev set out ",prev_set_out)
-            print("Prev set in ",prev_set_in)            
-            if new_set_out.difference(prev_set_out) != set() or new_set_in.difference(prev_set_in) != set():
-                changed = True
-            print()
-            print()
-        count = count + 1
-        print()
-        print("Count ",count)
-        print()
-        print()
-
-    
-
-    # hint: you will eventually implement a fixed point iteration. It
-    # should look a lot like figure 8.14b in the EAC book.
-    print("No of iterations RPO ",count)
-    #print("Out_In is ")
-    #print(Out_In)
-    return Out_In
 
 
 
@@ -129,7 +102,7 @@ def get_graph(input_file):
 def compute_LiveOut(CFG, dic):
 
     LiveOut = {}
-    count = 1
+    count = 0
     for i in CFG:
         LiveOut[i] = set()
 
@@ -142,14 +115,10 @@ def compute_LiveOut(CFG, dic):
             successors = get_node_successors(CFG,i)
             
             new_set = set()
-
-
             for s in successors:
-                
+                # Following given algorithm with UEVAR and VarKill
                 new_set = new_set.union(LiveOut[s].intersection(dic[s][2]))
-                
                 new_set = new_set.union(dic[s][0])
-                
                 
             LiveOut[i] = new_set
 
@@ -158,9 +127,6 @@ def compute_LiveOut(CFG, dic):
                 changed = True
         count = count + 1
     
-
-    # hint: you will eventually implement a fixed point iteration. It
-    # should look a lot like figure 8.14b in the EAC book.
     print("No of iterations ",count)
     return LiveOut
 
@@ -174,42 +140,17 @@ def dfs(node, visited, rpo_order,CFG):
     rpo_order.append(node)
 
 
-def compute_rpo(CFG):
+# Walking through to get the post order and reversing it using a dfs
+def compute_rpo(CFG,begin=None):
     visited = {node: False for node in CFG}
     rpo_order = []
-
-    for node in CFG:
-        if not visited[node]:
-            dfs(node, visited, rpo_order, CFG)
+    if begin is None:
+        begin = CFG.nodes()[0]
+    
+    dfs(begin, visited, rpo_order, CFG)
 
     return rpo_order[::-1]
 
-
-
-
-def reverse_and_compute_rpo(CFG):
-    def dfs_CFGR(node, visited, rpo_order,CFG):
-        visited[node] = True
-        for successor in reverse_cfg[node]:
-            if not visited[successor]:
-                dfs_CFGR(successor, visited, rpo_order, CFG)
-        rpo_order.append(node)
-
-    reverse_cfg = {node: [] for node in CFG}
-
-    for node in CFG:
-        for successor in get_node_successors(CFG,node):
-            reverse_cfg.setdefault(successor,[]).append(node)
-
-    visited = {node: False for node in reverse_cfg}
-    rpo_order = []
-
-    for node in CFG:
-        if not visited[node]:
-            dfs_CFGR(node, visited, rpo_order, reverse_cfg)
-
-    reversed_cfg_dict = {node: reverse_cfg[node] for node in rpo_order[::-1]}
-    return reversed_cfg_dict       
 
 # The uninitialized variables are the LiveOut variables from the start
 # node. It is fine if your implementation needs to change this
@@ -265,14 +206,9 @@ def find_undefined_variables(input_python_file):
             
     # Get LiveOut
     LiveOut = compute_LiveOut(CFG, dic)
-    #print(LiveOut)
-    RPO_LiveOut = compute_LiveOut_RPO_CFGReversed(CFG, dic)
 
-    print("RPO Liveout is ")
-    print(RPO_LiveOut)
-    #print()
     # Return a set of uninitialized variables
-    return get_uninitialized_variables_from_LiveOut(CFG, RPO_LiveOut)
+    return get_uninitialized_variables_from_LiveOut(CFG, LiveOut)
 
 # if you run this file, you can give it one of the python test cases
 # in the test_cases/ directory.
@@ -282,3 +218,90 @@ if __name__ == '__main__':
     parser.add_argument('pythonfile', help ='The python file to be analyzed') 
     args = parser.parse_args()
     find_undefined_variables(args.pythonfile)
+
+
+# # Part 2 Results 
+
+# ## Test 0
+
+# ### Default
+# No of iterations 2
+# ### RPO
+# No of iterations 2
+# ### RPO on Reversed CFG
+# No of iterations 2
+
+# ## Test 1
+
+# ### Default
+# No of iterations 5
+# ### RPO
+# No of iterations 5
+# ### RPO on Reversed CFG
+# No of iterations 2
+
+# ## Test 2
+
+# ### Default
+# No of iterations 5
+# ### RPO
+# No of iterations 5
+# ### RPO on Reversed CFG
+# No of iterations 2
+
+# ## Test 3
+
+# ### Default
+# No of iterations 6
+# ### RPO
+# No of iterations 6
+# ### RPO on Reversed CFG
+# No of iterations 3
+
+# ## Test 4
+
+# ### Default
+# No of iterations 7
+# ### RPO
+# No of iterations 7
+# ### RPO on Reversed CFG
+# No of iterations 3
+
+# ## Test 5
+
+# ### Default
+# No of iterations 6
+# ### RPO
+# No of iterations 6
+# ### RPO on Reversed CFG
+# No of iterations 3
+
+# ## Test 6
+
+# ### Default
+# No of iterations 8
+# ### RPO
+# No of iterations 9
+# ### RPO on Reversed CFG
+# No of iterations 3
+
+# ## Test 7
+
+# ### Default
+# No of iterations 8
+# ### RPO
+# No of iterations 8
+# ### RPO on Reversed CFG
+# No of iterations 3
+
+## Observations on Transversal Orders
+## We can see that when we move to Reverse Post Order Transversal of the CFG to get the live out that there is not that
+## much of an improvement in the iteration. Reverse post-order traversal is a topological ordering of the CFG in reverse. 
+## It ensures that, during the traversal, you visit a node after all its successors.
+## The reversed CFG with reverse post-order traversal often leads to more efficient propagation of live-out information 
+## which we can see in the results above.
+## This is because is because live out analysis is a backwards problem thus by us computing the RPO on the reverse CFG we
+## are able to reduce the number of iterations. We can almost see basically all the iterations times halved if not more
+## besides the cases that are a lot more simple in which we can't really see a difference.
+## For our submission we are going with a the Default Transversal
+##

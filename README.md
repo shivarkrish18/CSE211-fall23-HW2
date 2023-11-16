@@ -49,7 +49,79 @@ hash: 687575065.851211
 
 Time Difference: 46 ms faster
 
-# Part 2
+# Part 2 Results also in Comments of Code
+
+## Test 0
+
+### Default
+No of iterations 2
+### RPO
+No of iterations 2
+### RPO on Reversed CFG
+No of iterations 2
+
+## Test 1
+
+### Default
+No of iterations 5
+### RPO
+No of iterations 5
+### RPO on Reversed CFG
+No of iterations 2
+
+## Test 2
+
+### Default
+No of iterations 5
+### RPO
+No of iterations 5
+### RPO on Reversed CFG
+No of iterations 2
+
+## Test 3
+
+### Default
+No of iterations 6
+### RPO
+No of iterations 6
+### RPO on Reversed CFG
+No of iterations 3
+
+## Test 4
+
+### Default
+No of iterations 7
+### RPO
+No of iterations 7
+### RPO on Reversed CFG
+No of iterations 3
+
+## Test 5
+
+### Default
+No of iterations 6
+### RPO
+No of iterations 6
+### RPO on Reversed CFG
+No of iterations 3
+
+## Test 6
+
+### Default
+No of iterations 8
+### RPO
+No of iterations 9
+### RPO on Reversed CFG
+No of iterations 3
+
+## Test 7
+
+### Default
+No of iterations 8
+### RPO
+No of iterations 8
+### RPO on Reversed CFG
+No of iterations 3
 
 
 
