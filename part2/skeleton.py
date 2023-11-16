@@ -50,13 +50,16 @@ def compute_LiveOut_RPO(CFG, dic):
     return LiveOut
 
 def compute_LiveOut_RPO_CFGReversed(CFG, dic):
+    for i in CFG:
+        print("Node is ",i," Instruction is ", get_node_instruction(i))
+
     reversed_cfg = reverse_and_compute_rpo(CFG)
     print("reversed_cfg")
     print(reversed_cfg)
-    LiveOut = {}
+    Out_In = {}
     count = 1
     for i in reversed_cfg:
-        LiveOut[i] = set()
+        Out_In[i] = [set(),set()]
     #print("LiveOut for the CFG is ")
     #print(LiveOut)
     changed = True
@@ -64,29 +67,41 @@ def compute_LiveOut_RPO_CFGReversed(CFG, dic):
         changed = False
         
         for i in reversed_cfg:
-            prev_set = LiveOut[i]
-            new_set = set()
-            for s in i:
-                print(dic[s][2])
-                print(dic[s])
-                new_set = new_set.union(LiveOut[s].intersection(dic[s][2]))
-                new_set = new_set.union(dic[s][0])
-                
-                
-            LiveOut[i] = new_set
+            prev_set_out = Out_In[i][0]
+            prev_set_in = Out_In[i][1]
+            new_set_out = set()
+            new_set_in = set()
 
-            if new_set.difference(prev_set) != set():
+            new_set_in = dic[i][0].union(Out_In[i][0].difference(dic[i][1]))
+            for s in reversed_cfg[i]:
+                #print(dic[s][2])
+                #print(dic[s])
+                new_set_out = new_set_out.union(Out_In[s][1])                
+                
+            Out_In[i][0] = new_set_out
+            Out_In[i][1] = new_set_in
+            print("New set out ",new_set_out)
+            print("New set in ",new_set_in)
+            print("Prev set out ",prev_set_out)
+            print("Prev set in ",prev_set_in)            
+            if new_set_out.difference(prev_set_out) != set() or new_set_in.difference(prev_set_in) != set():
                 changed = True
+            print()
+            print()
         count = count + 1
-      
-
+        print()
+        print("Count ",count)
+        print()
+        print()
 
     
 
     # hint: you will eventually implement a fixed point iteration. It
     # should look a lot like figure 8.14b in the EAC book.
     print("No of iterations RPO ",count)
-    return LiveOut
+    #print("Out_In is ")
+    #print(Out_In)
+    return Out_In
 
 
 
@@ -215,7 +230,7 @@ def find_undefined_variables(input_python_file):
     dic = dict()
 
     #Storing all the variables used in the script
-    VarDomain = set()
+    VarDomain = set() 
 
     #Regular expression to check for input and assignment statements
     input_or_assignment_re = r'([0-9]+):\s*([a-z]+)\s*=\s*(input\(\)|[a-z]+)\s*'
@@ -256,7 +271,7 @@ def find_undefined_variables(input_python_file):
     print("RPO Liveout is ")
     print(RPO_LiveOut)
     #print()
-    # Return a set of unintialized variables
+    # Return a set of uninitialized variables
     return get_uninitialized_variables_from_LiveOut(CFG, RPO_LiveOut)
 
 # if you run this file, you can give it one of the python test cases
